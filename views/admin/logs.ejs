@@ -1,0 +1,31 @@
+<%- include('../partials/header') %>
+
+<div class="admin-page">
+  <h1>API Logs <small>(<%= total %> total)</small></h1>
+
+  <div class="card">
+    <table class="table">
+      <thead><tr><th>Timestamp</th><th>Client</th><th>Method</th><th>Endpoint</th><th>IP</th><th>Auth</th><th>Status</th></tr></thead>
+      <tbody>
+        <% logs.forEach(log => { %>
+          <tr>
+            <td><%= new Date(log.createdAt).toLocaleString('en-GB') %></td>
+            <td><%= log.client ? log.client.name : (log.tokenPrefix || 'Unknown') %></td>
+            <td><strong><%= log.method %></strong></td>
+            <td><%= log.endpoint %></td>
+            <td><%= log.ipAddress %></td>
+            <td><%= log.authSuccess ? '✅' : '❌' %></td>
+            <td><%= log.statusCode || '—' %></td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+    <div class="pagination">
+      <% if (page > 1) { %><a href="/admin/logs?page=<%= page - 1 %>" class="btn btn-secondary">Previous</a><% } %>
+      <span>Page <%= page %> of <%= totalPages %></span>
+      <% if (page < totalPages) { %><a href="/admin/logs?page=<%= page + 1 %>" class="btn btn-secondary">Next</a><% } %>
+    </div>
+  </div>
+</div>
+
+<%- include('../partials/footer') %>

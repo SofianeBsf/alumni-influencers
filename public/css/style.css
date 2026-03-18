@@ -1,0 +1,178 @@
+/* ============================================================
+   Alumni Influencers — Main Stylesheet
+   ============================================================ */
+
+:root {
+  --primary: #3498db;
+  --primary-dark: #2980b9;
+  --danger: #e74c3c;
+  --success: #27ae60;
+  --warning: #f39c12;
+  --secondary: #6c757d;
+  --bg: #f4f6f9;
+  --card-bg: #ffffff;
+  --text: #2c3e50;
+  --text-muted: #888;
+  --border: #e0e0e0;
+  --radius: 8px;
+  --shadow: 0 2px 12px rgba(0,0,0,0.08);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Segoe UI', Arial, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Navbar ── */
+.navbar {
+  background: var(--card-bg);
+  padding: 1rem 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: var(--shadow);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+.nav-brand { font-size: 1.25rem; font-weight: 700; color: var(--primary); text-decoration: none; }
+.nav-links { display: flex; align-items: center; gap: 1rem; }
+.nav-links a { color: var(--text); text-decoration: none; font-weight: 500; }
+.nav-links a:hover { color: var(--primary); }
+
+/* ── Container ── */
+.container { max-width: 1000px; margin: 2rem auto; padding: 0 1.5rem; flex: 1; }
+
+/* ── Cards ── */
+.card {
+  background: var(--card-bg);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 1.5rem 2rem;
+  margin-bottom: 1.5rem;
+}
+.card h2 { font-size: 1.2rem; margin-bottom: 1rem; color: var(--text); border-bottom: 2px solid var(--border); padding-bottom: 0.5rem; }
+
+/* ── Alerts ── */
+.alert {
+  padding: 0.9rem 1.2rem;
+  border-radius: var(--radius);
+  margin-bottom: 1rem;
+  font-size: 0.95rem;
+}
+.alert-success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+.alert-error   { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+.alert-info    { background: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+.alert ul { margin-left: 1.2rem; }
+
+/* ── Buttons ── */
+.btn {
+  display: inline-block;
+  padding: 0.6rem 1.2rem;
+  border-radius: var(--radius);
+  border: none;
+  cursor: pointer;
+  font-size: 0.95rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.2s;
+  margin: 0.2rem;
+}
+.btn-primary   { background: var(--primary); color: #fff; }
+.btn-primary:hover { background: var(--primary-dark); }
+.btn-secondary { background: var(--secondary); color: #fff; }
+.btn-danger    { background: var(--danger); color: #fff; }
+.btn-linkedin  { background: #0077b5; color: #fff; }
+.btn-sm        { padding: 0.35rem 0.8rem; font-size: 0.85rem; }
+.btn-full      { display: block; width: 100%; text-align: center; margin-top: 1rem; }
+.btn-link      { background: none; border: none; cursor: pointer; color: var(--text); font-size: 0.95rem; padding: 0; }
+.btn-link:hover { color: var(--primary); }
+
+/* ── Forms ── */
+.form { display: flex; flex-direction: column; gap: 1rem; }
+.form-group { display: flex; flex-direction: column; gap: 0.4rem; }
+.form-group label { font-weight: 600; font-size: 0.9rem; color: var(--text); }
+.form-group input, .form-group textarea, .form-group select {
+  padding: 0.7rem 1rem;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  font-size: 0.95rem;
+  transition: border-color 0.2s;
+  width: 100%;
+}
+.form-group input:focus, .form-group textarea:focus, .form-group select:focus {
+  outline: none;
+  border-color: var(--primary);
+}
+.form-group small { color: var(--text-muted); font-size: 0.82rem; }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+
+/* ── Tables ── */
+.table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
+.table th { background: var(--bg); padding: 0.7rem 1rem; text-align: left; font-weight: 600; border-bottom: 2px solid var(--border); }
+.table td { padding: 0.7rem 1rem; border-bottom: 1px solid var(--border); }
+.table tr:last-child td { border-bottom: none; }
+.table a { color: var(--primary); }
+
+/* ── Badges ── */
+.badge { display: inline-block; padding: 0.25rem 0.7rem; border-radius: 20px; font-size: 0.8rem; font-weight: 600; }
+.badge-success { background: #d4edda; color: #155724; }
+.badge-error   { background: #f8d7da; color: #721c24; }
+.badge-warning { background: #fff3cd; color: #856404; }
+
+/* ── Stats Row ── */
+.stats-row { display: flex; gap: 1rem; margin-bottom: 1.5rem; flex-wrap: wrap; }
+.stat-card {
+  flex: 1; min-width: 140px;
+  background: var(--card-bg); border-radius: var(--radius);
+  box-shadow: var(--shadow); padding: 1.2rem 1.5rem; text-align: center;
+}
+.stat-value { font-size: 2rem; font-weight: 700; color: var(--primary); }
+.stat-label { font-size: 0.85rem; color: var(--text-muted); margin-top: 0.3rem; }
+
+/* ── Profile ── */
+.profile-header { display: flex; align-items: center; gap: 1.5rem; }
+.profile-image { width: 100px; height: 100px; border-radius: 50%; object-fit: cover; border: 3px solid var(--border); }
+.profile-image-placeholder { width: 100px; height: 100px; border-radius: 50%; background: var(--bg); font-size: 3rem; display: flex; align-items: center; justify-content: center; }
+.profile-thumb { width: 60px; height: 60px; border-radius: 50%; object-fit: cover; }
+.credential-item { padding: 0.8rem 0; border-bottom: 1px solid var(--border); display: flex; align-items: baseline; gap: 0.5rem; flex-wrap: wrap; }
+.credential-item:last-child { border-bottom: none; }
+.credential-item .date { color: var(--text-muted); font-size: 0.85rem; margin-left: auto; }
+
+/* ── Bidding ── */
+.bid-amount { font-size: 2.5rem; font-weight: 700; color: var(--primary); margin: 1rem 0; }
+.bid-status-card { text-align: center; }
+
+/* ── Add Form (details/summary collapsible) ── */
+details.add-form { margin-top: 1rem; }
+details.add-form summary { cursor: pointer; list-style: none; }
+details.add-form summary::-webkit-details-marker { display: none; }
+details.add-form .form { margin-top: 1rem; padding: 1rem; background: var(--bg); border-radius: var(--radius); }
+
+/* ── Token Reveal ── */
+.token-reveal { font-family: monospace; }
+.token-box { background: #2c3e50; color: #2ecc71; padding: 1rem; border-radius: var(--radius); margin-top: 0.5rem; word-break: break-all; }
+
+/* ── Pagination ── */
+.pagination { display: flex; align-items: center; justify-content: center; gap: 1rem; margin-top: 1rem; }
+
+/* ── Footer ── */
+.footer { background: var(--card-bg); text-align: center; padding: 1rem; color: var(--text-muted); font-size: 0.85rem; border-top: 1px solid var(--border); }
+
+/* ── Utility ── */
+.text-center { text-align: center; }
+.text-muted   { color: var(--text-muted); }
+
+/* ── Responsive ── */
+@media (max-width: 640px) {
+  .form-row { grid-template-columns: 1fr; }
+  .profile-header { flex-direction: column; text-align: center; }
+  .navbar { flex-direction: column; gap: 0.5rem; }
+  .stats-row { flex-direction: column; }
+}

@@ -1,0 +1,99 @@
+<%- include('../partials/header') %>
+
+<div class="bidding-page">
+  <h1>Daily Featured Slot Bidding</h1>
+
+  <!-- Status Cards -->
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="stat-value"><%= winCount %></div>
+      <div class="stat-label">Wins this month</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value"><%= remainingSlots %></div>
+      <div class="stat-label">Slots remaining</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value"><%= totalBidders %></div>
+      <div class="stat-label">Active bidders today</div>
+    </div>
+  </div>
+
+  <% if (remainingSlots === 0) { %>
+    <div class="alert alert-error">
+      You've reached your monthly limit of <%= monthlyLimit %> featured slots.
+      Come back next month!
+    </div>
+  <% } %>
+
+  <!-- Current Bid Status -->
+  <% if (myBid) { %>
+    <div class="card bid-status-card">
+      <h2>Your Current Bid</h2>
+      <p class="bid-amount">£<%= myBid.amount.toFixed(2) %></p>
+      <% if (myBid.status === 'won') { %>
+        <div class="badge badge-success">🏆 WON</div>
+      <% } else if (myBid.status === 'lost') { %>
+        <div class="badge badge-error">❌ LOST</div>
+      <% } else { %>
+        <div class="badge badge-warning">⏳ ACTIVE — Winner selected at 6 PM</div>
+        <% if (biddingOpen && remainingSlots > 0) { %>
+          <h3>Increase Your Bid</h3>
+          <p class="text-muted">Bids can only be increased, not decreased. You won't see other bids.</p>
+          <form action="/bidding/update" method="POST" class="form form-inline">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+            <div class="form-group">
+              <label for="updateAmount">New Bid Amount (£)</label>
+              <input type="number" id="updateAmount" name="amount" min="<%= myBid.amount + 1 %>"
+                step="0.01" required placeholder="Higher than £<%= myBid.amount.toFixed(2) %>" />
+            </div>
+            <button type="submit" class="btn btn-primary">Update Bid</button>
+          </form>
+        <% } %>
+      <% } %>
+    </div>
+  <% } else if (biddingOpen && remainingSlots > 0) { %>
+    <!-- Place a New Bid -->
+    <div class="card">
+      <h2>Place Your Bid</h2>
+      <div class="alert alert-info">
+        <strong>How it works:</strong> You bid blind — you won't see other bids.
+        You'll receive feedback on whether you're currently winning or losing.
+        The highest bidder at 6 PM wins and is featured the next full day.
+      </div>
+      <form action="/bidding/place" method="POST" class="form">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+        <div class="form-group">
+          <label for="amount">Your Bid Amount (£)</label>
+          <input type="number" id="amount" name="amount" min="1" step="0.01" required
+            placeholder="Enter your bid in GBP" />
+        </div>
+        <button type="submit" class="btn btn-primary btn-full">Place Bid</button>
+      </form>
+    </div>
+  <% } else if (!biddingOpen) { %>
+    <div class="card">
+      <div class="alert alert-info">
+        Bidding has closed for today (after 6 PM). Winner will be announced shortly.
+        Come back tomorrow to place your bid for the next day!
+      </div>
+    </div>
+  <% } %>
+
+  <!-- Today's Winner (if already selected) -->
+  <% if (todaysWinner) { %>
+    <div class="card winner-card">
+      <h2>🏆 Tomorrow's Featured Alumnus</h2>
+      <% if (todaysWinner.profile.profileImage) { %>
+        <img src="<%= todaysWinner.profile.profileImage %>" class="profile-thumb" alt="Winner" />
+      <% } %>
+      <h3><%= todaysWinner.profile.firstName %> <%= todaysWinner.profile.lastName %></h3>
+    </div>
+  <% } %>
+
+  <div class="text-center" style="margin-top: 1rem;">
+    <a href="/bidding/history" class="btn btn-secondary">View My Bid History</a>
+  </div>
+</div>
+
+<%- include('../partials/footer') %>

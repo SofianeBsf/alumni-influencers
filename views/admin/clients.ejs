@@ -1,0 +1,64 @@
+<%- include('../partials/header') %>
+
+<div class="admin-page">
+  <h1>API Clients</h1>
+
+  <% if (typeof newToken !== 'undefined' && newToken) { %>
+    <div class="alert alert-success token-reveal">
+      <strong>⚠️ Copy this token now — it will never be shown again!</strong>
+      <div class="token-box"><code><%= newToken %></code></div>
+    </div>
+  <% } %>
+
+  <div class="card">
+    <h2>Create New API Client</h2>
+    <form action="/admin/clients/create" method="POST" class="form form-inline">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+      <div class="form-row">
+        <div class="form-group"><label>Client Name *</label><input type="text" name="name" required placeholder="e.g. AR App v1" /></div>
+        <div class="form-group"><label>Description</label><input type="text" name="description" placeholder="Optional description" /></div>
+        <div class="form-group">
+          <label>Scope</label>
+          <select name="scope">
+            <option value="public">public (today's featured only)</option>
+            <option value="full">full (all endpoints)</option>
+          </select>
+        </div>
+      </div>
+      <button type="submit" class="btn btn-primary">Generate Token</button>
+    </form>
+  </div>
+
+  <div class="card">
+    <h2>All Clients</h2>
+    <table class="table">
+      <thead><tr><th>Name</th><th>Prefix</th><th>Scope</th><th>Status</th><th>Last Used</th><th>Actions</th></tr></thead>
+      <tbody>
+        <% clients.forEach(c => { %>
+          <tr>
+            <td><strong><%= c.name %></strong><br /><small><%= c.description || '' %></small></td>
+            <td><code><%= c.tokenPrefix %>...</code></td>
+            <td><%= c.scope %></td>
+            <td><span class="badge <%= c.isActive ? 'badge-success' : 'badge-error' %>"><%= c.isActive ? 'Active' : 'Revoked' %></span></td>
+            <td><%= c.lastUsedAt ? new Date(c.lastUsedAt).toLocaleString('en-GB') : 'Never' %></td>
+            <td>
+              <% if (c.isActive) { %>
+                <form action="/admin/clients/<%= c._id %>/revoke" method="POST" style="display:inline;">
+                  <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+                  <button class="btn btn-danger btn-sm" onclick="return confirm('Revoke this token?')">Revoke</button>
+                </form>
+              <% } else { %>
+                <form action="/admin/clients/<%= c._id %>/activate" method="POST" style="display:inline;">
+                  <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+                  <button class="btn btn-secondary btn-sm">Re-activate</button>
+                </form>
+              <% } %>
+            </td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<%- include('../partials/footer') %>

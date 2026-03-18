@@ -1,0 +1,72 @@
+<%- include('../partials/header') %>
+
+<div class="admin-page">
+  <h1>Admin Dashboard</h1>
+
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="stat-value"><%= stats.totalClients %></div>
+      <div class="stat-label">Total API Clients</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value"><%= stats.activeClients %></div>
+      <div class="stat-label">Active Clients</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value"><%= stats.totalLogs %></div>
+      <div class="stat-label">Total API Requests</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Quick Links</h2>
+    <a href="/admin/clients" class="btn btn-primary">Manage API Clients</a>
+    <a href="/admin/stats" class="btn btn-secondary">Usage Statistics</a>
+    <a href="/admin/logs" class="btn btn-secondary">Raw API Logs</a>
+    <a href="/api-docs" class="btn btn-secondary" target="_blank">Swagger Docs</a>
+  </div>
+
+  <div class="card">
+    <h2>Recent API Requests</h2>
+    <table class="table">
+      <thead><tr><th>Time</th><th>Client</th><th>Method</th><th>Endpoint</th><th>Auth</th></tr></thead>
+      <tbody>
+        <% recentLogs.forEach(log => { %>
+          <tr>
+            <td><%= new Date(log.createdAt).toLocaleString('en-GB') %></td>
+            <td><%= log.client ? log.client.name : 'Unknown' %></td>
+            <td><%= log.method %></td>
+            <td><%= log.endpoint %></td>
+            <td><%= log.authSuccess ? '✅' : '❌' %></td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Record Alumni Event Attendance -->
+  <div class="card">
+    <h2>Record Alumni Event Attendance</h2>
+    <p>Recording attendance grants the alumni a 4th bidding slot for that month.</p>
+    <form action="/admin/events/record" method="POST" class="form form-inline">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+      <div class="form-row">
+        <div class="form-group">
+          <label>Alumni User ID</label>
+          <input type="text" name="userId" required placeholder="MongoDB ObjectId" />
+        </div>
+        <div class="form-group">
+          <label>Event Name</label>
+          <input type="text" name="eventName" required placeholder="e.g. Annual Alumni Gala 2026" />
+        </div>
+        <div class="form-group">
+          <label>Event Date</label>
+          <input type="date" name="eventDate" required />
+        </div>
+      </div>
+      <button type="submit" class="btn btn-primary">Record Attendance</button>
+    </form>
+  </div>
+</div>
+
+<%- include('../partials/footer') %>

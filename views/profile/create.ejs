@@ -1,0 +1,51 @@
+<%- include('../partials/header') %>
+
+<div class="card">
+  <h1>Create Your Profile</h1>
+  <p>Fill in your basic information. You can add qualifications and experience after.</p>
+
+  <% if (errors && errors.length > 0) { %>
+    <div class="alert alert-error">
+      <% errors.forEach(e => { %><p><%= e.msg %></p><% }) %>
+    </div>
+  <% } %>
+
+  <form action="/profile/create" method="POST" enctype="multipart/form-data" class="form">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+
+    <div class="form-row">
+      <div class="form-group">
+        <label for="firstName">First Name *</label>
+        <input type="text" id="firstName" name="firstName" required value="<%= formData.firstName || '' %>" />
+      </div>
+      <div class="form-group">
+        <label for="lastName">Last Name *</label>
+        <input type="text" id="lastName" name="lastName" required value="<%= formData.lastName || '' %>" />
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label for="bio">Biography</label>
+      <textarea id="bio" name="bio" rows="5" maxlength="2000"
+        placeholder="Tell students about your career journey, achievements, and advice..."><%= formData.bio || '' %></textarea>
+      <small>Max 2000 characters</small>
+    </div>
+
+    <div class="form-group">
+      <label for="linkedinUrl">LinkedIn Profile URL</label>
+      <input type="url" id="linkedinUrl" name="linkedinUrl"
+        placeholder="https://linkedin.com/in/your-name"
+        value="<%= formData.linkedinUrl || '' %>" />
+    </div>
+
+    <div class="form-group">
+      <label for="profileImage">Profile Photo</label>
+      <input type="file" id="profileImage" name="profileImage" accept="image/*" />
+      <small>JPEG, PNG, GIF or WEBP. Max 5MB.</small>
+    </div>
+
+    <button type="submit" class="btn btn-primary btn-full">Create Profile</button>
+  </form>
+</div>
+
+<%- include('../partials/footer') %>

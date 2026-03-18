@@ -1,0 +1,87 @@
+<%- include('../partials/header') %>
+
+<div class="profile-view">
+  <div class="profile-header card">
+    <% if (profile.profileImage) { %>
+      <img src="<%= profile.profileImage %>" alt="<%= profile.firstName %>" class="profile-image" />
+    <% } else { %>
+      <div class="profile-image-placeholder">👤</div>
+    <% } %>
+    <div class="profile-header-info">
+      <h1><%= profile.firstName %> <%= profile.lastName %></h1>
+      <% if (profile.linkedinUrl) { %>
+        <a href="<%= profile.linkedinUrl %>" target="_blank" class="btn btn-linkedin">🔗 LinkedIn Profile</a>
+      <% } %>
+      <a href="/profile/edit" class="btn btn-secondary">Edit Profile</a>
+      <a href="/bidding" class="btn btn-primary">Place a Bid</a>
+    </div>
+  </div>
+
+  <% if (profile.bio) { %>
+    <section class="card"><h2>About</h2><p><%= profile.bio %></p></section>
+  <% } %>
+
+  <% if (profile.degrees && profile.degrees.length > 0) { %>
+    <section class="card"><h2>Degrees</h2>
+      <% profile.degrees.forEach(d => { %>
+        <div class="credential-item">
+          <strong><a href="<%= d.url %>" target="_blank"><%= d.name %></a></strong>
+          <span><%= d.institution %></span>
+          <span class="date">Completed: <%= new Date(d.completionDate).toLocaleDateString('en-GB') %></span>
+        </div>
+      <% }) %>
+    </section>
+  <% } %>
+
+  <% if (profile.certifications && profile.certifications.length > 0) { %>
+    <section class="card"><h2>Certifications</h2>
+      <% profile.certifications.forEach(c => { %>
+        <div class="credential-item">
+          <strong><a href="<%= c.url %>" target="_blank"><%= c.name %></a></strong>
+          <span><%= c.institution %></span>
+          <span class="date">Completed: <%= new Date(c.completionDate).toLocaleDateString('en-GB') %></span>
+        </div>
+      <% }) %>
+    </section>
+  <% } %>
+
+  <% if (profile.licences && profile.licences.length > 0) { %>
+    <section class="card"><h2>Licences</h2>
+      <% profile.licences.forEach(l => { %>
+        <div class="credential-item">
+          <strong><a href="<%= l.url %>" target="_blank"><%= l.name %></a></strong>
+          <span><%= l.institution %></span>
+          <span class="date">Completed: <%= new Date(l.completionDate).toLocaleDateString('en-GB') %></span>
+        </div>
+      <% }) %>
+    </section>
+  <% } %>
+
+  <% if (profile.courses && profile.courses.length > 0) { %>
+    <section class="card"><h2>Short Courses</h2>
+      <% profile.courses.forEach(c => { %>
+        <div class="credential-item">
+          <strong><a href="<%= c.url %>" target="_blank"><%= c.name %></a></strong>
+          <span><%= c.institution %></span>
+          <span class="date">Completed: <%= new Date(c.completionDate).toLocaleDateString('en-GB') %></span>
+        </div>
+      <% }) %>
+    </section>
+  <% } %>
+
+  <% if (profile.employment && profile.employment.length > 0) { %>
+    <section class="card"><h2>Employment History</h2>
+      <% profile.employment.sort((a,b) => new Date(b.startDate) - new Date(a.startDate)).forEach(e => { %>
+        <div class="credential-item">
+          <strong><%= e.role %></strong> at <strong><%= e.company %></strong>
+          <span class="date">
+            <%= new Date(e.startDate).toLocaleDateString('en-GB') %> –
+            <%= e.isCurrent ? 'Present' : new Date(e.endDate).toLocaleDateString('en-GB') %>
+          </span>
+        </div>
+      <% }) %>
+    </section>
+  <% } %>
+</div>
+
+<%- include('../partials/footer') %>
