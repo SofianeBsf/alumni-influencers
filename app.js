@@ -143,7 +143,17 @@ app.use(
 
 // ─── CSRF Protection ──────────────────────────────────────────────────────────
 // Applied AFTER session middleware. Excludes API routes (they use Bearer tokens).
-const csrfProtection = csrf({ cookie: false }); // Use session-based CSRF
+// Configure CSRF to check body, query string, AND headers
+// Query string is needed for multipart/form-data (file upload forms) because
+// the body parser (multer) runs AFTER csrf middleware, so _csrf can't be in body
+const csrfProtection = csrf({
+  cookie: false,
+  value: (req) =>
+    req.body._csrf ||
+    req.query._csrf ||
+    req.headers['x-csrf-token'] ||
+    req.headers['csrf-token'],
+});
 
 // Middleware to add csrfToken to all web views
 const addCsrfToken = (req, res, next) => {

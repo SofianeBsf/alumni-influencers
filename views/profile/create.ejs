@@ -10,8 +10,7 @@
     </div>
   <% } %>
 
-  <form action="/profile/create" method="POST" enctype="multipart/form-data" class="form">
-    <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+  <form action="/profile/create?_csrf=<%= csrfToken %>" method="POST" enctype="multipart/form-data" class="form">
 
     <div class="form-row">
       <div class="form-group">

@@ -20,8 +20,11 @@ async function deleteItem(url, btn) {
   const csrfInput = document.querySelector('input[name="_csrf"]');
   const csrfToken = csrfInput ? csrfInput.value : '';
 
+  // Pass CSRF token in URL query string (most reliable across all request types)
+  const urlWithCsrf = `${url}?_csrf=${encodeURIComponent(csrfToken)}`;
+
   try {
-    const response = await fetch(url, {
+    const response = await fetch(urlWithCsrf, {
       method: 'DELETE',
       headers: {
         'Content-Type': 'application/json',

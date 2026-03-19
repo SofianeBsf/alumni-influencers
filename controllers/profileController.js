@@ -157,7 +157,8 @@ const deleteSubItem = (arrayField) => async (req, res) => {
     const profile = await Profile.findOne({ user: req.session.userId });
     if (!profile) return res.status(404).json({ success: false });
 
-    profile[arrayField].id(req.params.itemId).deleteOne();
+    // Use pull() for reliable subdocument removal in Mongoose 8+
+    profile[arrayField].pull({ _id: req.params.itemId });
     await profile.save();
 
     res.json({ success: true });
