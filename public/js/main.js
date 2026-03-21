@@ -4,14 +4,17 @@
  * - AJAX delete for profile sub-items (credentials, employment)
  * - CSRF token extraction from hidden inputs
  * - Alert auto-dismiss
+ *
+ * NOTE: No inline onclick handlers are used (blocked by CSP).
+ * All click handling is done via event delegation on document.
  */
 
 /**
- * Delete a profile sub-item via AJAX (DELETE request).
- * The CSRF token is read from the nearest form on the page.
+ * Perform the DELETE request for a profile sub-item.
+ * Called by the event delegation listener below.
  *
- * @param {string} url - The endpoint (e.g. /profile/degrees/<id>)
- * @param {HTMLElement} btn - The clicked button (for removing the table row)
+ * @param {string} url - e.g. /profile/degrees/<id>
+ * @param {HTMLElement} btn - the clicked Delete button
  */
 async function deleteItem(url, btn) {
   if (!confirm('Are you sure you want to delete this entry?')) return;
@@ -20,7 +23,7 @@ async function deleteItem(url, btn) {
   const csrfInput = document.querySelector('input[name="_csrf"]');
   const csrfToken = csrfInput ? csrfInput.value : '';
 
-  // Pass CSRF token in URL query string (most reliable across all request types)
+  // Pass CSRF token in URL query string
   const urlWithCsrf = `${url}?_csrf=${encodeURIComponent(csrfToken)}`;
 
   try {
@@ -35,7 +38,7 @@ async function deleteItem(url, btn) {
     const data = await response.json();
 
     if (data.success) {
-      // Remove the table row from the DOM without a page reload
+      // Fade out and remove the table row
       const row = btn.closest('tr');
       if (row) {
         row.style.transition = 'opacity 0.3s';
@@ -51,14 +54,35 @@ async function deleteItem(url, btn) {
   }
 }
 
-// Auto-dismiss alerts after 5 seconds
 document.addEventListener('DOMContentLoaded', () => {
+
+  // ── Event delegation for all delete buttons ──────────────────────────────
+  // Buttons use data-url attribute instead of onclick (CSP requires this)
+  document.addEventListener('click', (e) => {
+    const btn = e.target.closest('.delete-btn');
+    if (!btn) return;
+    const url = btn.dataset.url;
+    if (url) deleteItem(url, btn);
+  });
+
+  // ── "Currently working here" checkbox disables end-date input ────────────
+  const isCurrentCheckbox = document.getElementById('isCurrentCheckbox');
+  const endDateInput = document.getElementById('endDate');
+  if (isCurrentCheckbox && endDateInput) {
+    isCurrentCheckbox.addEventListener('change', () => {
+      endDateInput.disabled = isCurrentCheckbox.checked;
+      if (isCurrentCheckbox.checked) endDateInput.value = '';
+    });
+  }
+
+  // ── Auto-dismiss alerts after 5 seconds ──────────────────────────────────
   const alerts = document.querySelectorAll('.alert');
-  alerts.forEach((alert) => {
+  alerts.forEach((alertEl) => {
     setTimeout(() => {
-      alert.style.transition = 'opacity 0.5s';
-      alert.style.opacity = '0';
-      setTimeout(() => alert.remove(), 500);
+      alertEl.style.transition = 'opacity 0.5s';
+      alertEl.style.opacity = '0';
+      setTimeout(() => alertEl.remove(), 500);
     }, 5000);
   });
+
 });

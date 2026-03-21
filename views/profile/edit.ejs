@@ -49,7 +49,7 @@
               <td><%= d.institution %></td>
               <td><%= new Date(d.completionDate).toLocaleDateString('en-GB') %></td>
               <td>
-                <button class="btn btn-danger btn-sm" onclick="deleteItem('/profile/degrees/<%= d._id %>', this)">Delete</button>
+                <button class="btn btn-danger btn-sm delete-btn" data-url="/profile/degrees/<%= d._id %>">Delete</button>
               </td>
             </tr>
           <% }) %>
@@ -85,7 +85,7 @@
               <td><a href="<%= c.url %>" target="_blank"><%= c.name %></a></td>
               <td><%= c.institution %></td>
               <td><%= new Date(c.completionDate).toLocaleDateString('en-GB') %></td>
-              <td><button class="btn btn-danger btn-sm" onclick="deleteItem('/profile/certifications/<%= c._id %>', this)">Delete</button></td>
+              <td><button class="btn btn-danger btn-sm delete-btn" data-url="/profile/certifications/<%= c._id %>">Delete</button></td>
             </tr>
           <% }) %>
         </tbody>
@@ -120,7 +120,7 @@
               <td><a href="<%= l.url %>" target="_blank"><%= l.name %></a></td>
               <td><%= l.institution %></td>
               <td><%= new Date(l.completionDate).toLocaleDateString('en-GB') %></td>
-              <td><button class="btn btn-danger btn-sm" onclick="deleteItem('/profile/licences/<%= l._id %>', this)">Delete</button></td>
+              <td><button class="btn btn-danger btn-sm delete-btn" data-url="/profile/licences/<%= l._id %>">Delete</button></td>
             </tr>
           <% }) %>
         </tbody>
@@ -155,7 +155,7 @@
               <td><a href="<%= c.url %>" target="_blank"><%= c.name %></a></td>
               <td><%= c.institution %></td>
               <td><%= new Date(c.completionDate).toLocaleDateString('en-GB') %></td>
-              <td><button class="btn btn-danger btn-sm" onclick="deleteItem('/profile/courses/<%= c._id %>', this)">Delete</button></td>
+              <td><button class="btn btn-danger btn-sm delete-btn" data-url="/profile/courses/<%= c._id %>">Delete</button></td>
             </tr>
           <% }) %>
         </tbody>
@@ -191,7 +191,7 @@
               <td><%= e.company %></td>
               <td><%= new Date(e.startDate).toLocaleDateString('en-GB') %></td>
               <td><%= e.isCurrent ? 'Present' : (e.endDate ? new Date(e.endDate).toLocaleDateString('en-GB') : '—') %></td>
-              <td><button class="btn btn-danger btn-sm" onclick="deleteItem('/profile/employment/<%= e._id %>', this)">Delete</button></td>
+              <td><button class="btn btn-danger btn-sm delete-btn" data-url="/profile/employment/<%= e._id %>">Delete</button></td>
             </tr>
           <% }) %>
         </tbody>
@@ -210,7 +210,7 @@
           <div class="form-group">
             <label>End Date</label>
             <input type="date" name="endDate" id="endDate" />
-            <label style="margin-top:8px;"><input type="checkbox" name="isCurrent" onchange="document.getElementById('endDate').disabled=this.checked" /> Currently working here</label>
+            <label style="margin-top:8px;"><input type="checkbox" name="isCurrent" id="isCurrentCheckbox" /> Currently working here</label>
           </div>
         </div>
         <button type="submit" class="btn btn-primary">Add Employment</button>
