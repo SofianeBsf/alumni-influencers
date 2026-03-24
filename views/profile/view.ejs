@@ -14,6 +14,23 @@
       <% } %>
       <a href="/profile/edit" class="btn btn-secondary">Edit Profile</a>
       <a href="/bidding" class="btn btn-primary">Place a Bid</a>
+
+      <!-- Profile Completion -->
+      <div style="margin-top:1rem;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:.3rem;">
+          <small><strong>Profile Completion</strong></small>
+          <small style="font-weight:700; color:<%= completionScore === 100 ? '#38a169' : '#d69e2e' %>">
+            <%= completionScore %>%
+          </small>
+        </div>
+        <div style="background:#e2e8f0; border-radius:9999px; height:8px; overflow:hidden; width:200px;">
+          <div style="background:<%= completionScore === 100 ? '#38a169' : '#3182ce' %>;
+                      width:<%= completionScore %>%; height:100%; border-radius:9999px;"></div>
+        </div>
+        <% if (completionScore < 100) { %>
+          <small class="text-muted"><a href="/profile/edit">Complete your profile</a> to increase visibility.</small>
+        <% } %>
+      </div>
     </div>
   </div>
 

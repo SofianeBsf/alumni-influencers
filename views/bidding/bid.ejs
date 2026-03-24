@@ -3,10 +3,10 @@
 <div class="bidding-page">
   <h1>Daily Featured Slot Bidding</h1>
 
-  <!-- Status Cards -->
+  <!-- ── Status Cards ─────────────────────────────────────────────────────── -->
   <div class="stats-row">
     <div class="stat-card">
-      <div class="stat-value"><%= winCount %></div>
+      <div class="stat-value"><%= winCount %> / <%= monthlyLimit %></div>
       <div class="stat-label">Wins this month</div>
     </div>
     <div class="stat-card">
@@ -21,77 +21,115 @@
 
   <% if (remainingSlots === 0) { %>
     <div class="alert alert-error">
-      You've reached your monthly limit of <%= monthlyLimit %> featured slots.
-      Come back next month!
+      You have reached your monthly limit of <%= monthlyLimit %> featured slots. Come back next month!
     </div>
   <% } %>
 
-  <!-- Current Bid Status -->
+  <!-- ── Today's Featured Alumnus (selected at last midnight) ─────────────── -->
+  <% if (todaysWinner) { %>
+    <div class="card winner-card">
+      <h2>🏆 Today's Featured Alumnus</h2>
+      <% if (todaysWinner.profile && todaysWinner.profile.profileImage) { %>
+        <img src="<%= todaysWinner.profile.profileImage %>" class="profile-thumb" alt="Winner" />
+      <% } %>
+      <% if (todaysWinner.profile) { %>
+        <h3><%= todaysWinner.profile.firstName %> <%= todaysWinner.profile.lastName %></h3>
+      <% } %>
+    </div>
+  <% } %>
+
+  <!-- ── Current Bid Status (reloads fresh from DB every page load) ────────── -->
   <% if (myBid) { %>
     <div class="card bid-status-card">
-      <h2>Your Current Bid</h2>
+      <h2>Your Current Bid for Today</h2>
       <p class="bid-amount">£<%= myBid.amount.toFixed(2) %></p>
+
       <% if (myBid.status === 'won') { %>
-        <div class="badge badge-success">🏆 WON</div>
+        <div class="badge badge-success" style="font-size:1.1rem; padding:.6rem 1.2rem;">
+          🏆 You WON — you will be featured tomorrow!
+        </div>
+
       <% } else if (myBid.status === 'lost') { %>
-        <div class="badge badge-error">❌ LOST</div>
+        <div class="badge badge-error" style="font-size:1.1rem; padding:.6rem 1.2rem;">
+          ❌ You did not win this round. Better luck tomorrow!
+        </div>
+
       <% } else { %>
-        <div class="badge badge-warning">⏳ ACTIVE — Winner selected at 6 PM</div>
-        <% if (biddingOpen && remainingSlots > 0) { %>
-          <h3>Increase Your Bid</h3>
-          <p class="text-muted">Bids can only be increased, not decreased. You won't see other bids.</p>
+        <!-- Active bid: show live win/lose status from DB -->
+        <% if (isWinning === true) { %>
+          <div class="badge badge-success" style="font-size:1.1rem; padding:.6rem 1.2rem;">
+            ✅ You are currently WINNING
+          </div>
+        <% } else if (isWinning === false) { %>
+          <div class="badge badge-error" style="font-size:1.1rem; padding:.6rem 1.2rem;">
+            ⚠️ You are currently LOSING — consider increasing your bid
+          </div>
+        <% } %>
+
+        <p class="text-muted" style="margin-top:.75rem;">
+          Winner is selected at <strong>midnight</strong>.
+          Refresh this page any time to see your latest status.
+        </p>
+
+        <!-- Update Bid -->
+        <% if (remainingSlots > 0) { %>
+          <h3 style="margin-top:1.5rem;">Increase Your Bid</h3>
+          <p class="text-muted">Bids can only be increased. You cannot see other bids (blind bidding).</p>
           <form action="/bidding/update" method="POST" class="form form-inline">
             <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
             <div class="form-group">
               <label for="updateAmount">New Bid Amount (£)</label>
-              <input type="number" id="updateAmount" name="amount" min="<%= myBid.amount + 1 %>"
-                step="0.01" required placeholder="Higher than £<%= myBid.amount.toFixed(2) %>" />
+              <input
+                type="number"
+                id="updateAmount"
+                name="amount"
+                min="<%= myBid.amount + 0.01 %>"
+                step="0.01"
+                required
+                placeholder="Must be higher than £<%= myBid.amount.toFixed(2) %>"
+              />
             </div>
             <button type="submit" class="btn btn-primary">Update Bid</button>
           </form>
         <% } %>
+
+        <!-- Cancel Bid -->
+        <div style="margin-top:1rem; padding-top:1rem; border-top:1px solid #eee;">
+          <form action="/bidding/cancel" method="POST">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+            <button
+              type="submit"
+              class="btn btn-danger confirm-btn"
+              data-confirm="Cancel your bid? This cannot be undone.">
+              Cancel My Bid
+            </button>
+          </form>
+        </div>
       <% } %>
     </div>
-  <% } else if (biddingOpen && remainingSlots > 0) { %>
-    <!-- Place a New Bid -->
+
+  <% } else if (remainingSlots > 0) { %>
+    <!-- ── Place a New Bid ─────────────────────────────────────────────────── -->
     <div class="card">
       <h2>Place Your Bid</h2>
       <div class="alert alert-info">
-        <strong>How it works:</strong> You bid blind — you won't see other bids.
-        You'll receive feedback on whether you're currently winning or losing.
-        The highest bidder at 6 PM wins and is featured the next full day.
+        <strong>How it works:</strong> You bid blind — you cannot see other bids or the current highest amount.
+        After placing, you will see whether you are currently winning or losing.
+        The highest bidder at <strong>midnight</strong> wins and is featured the following day.
       </div>
       <form action="/bidding/place" method="POST" class="form">
         <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
         <div class="form-group">
           <label for="amount">Your Bid Amount (£)</label>
           <input type="number" id="amount" name="amount" min="1" step="0.01" required
-            placeholder="Enter your bid in GBP" />
+            placeholder="Enter your bid amount in GBP" />
         </div>
         <button type="submit" class="btn btn-primary btn-full">Place Bid</button>
       </form>
     </div>
-  <% } else if (!biddingOpen) { %>
-    <div class="card">
-      <div class="alert alert-info">
-        Bidding has closed for today (after 6 PM). Winner will be announced shortly.
-        Come back tomorrow to place your bid for the next day!
-      </div>
-    </div>
   <% } %>
 
-  <!-- Today's Winner (if already selected) -->
-  <% if (todaysWinner) { %>
-    <div class="card winner-card">
-      <h2>🏆 Tomorrow's Featured Alumnus</h2>
-      <% if (todaysWinner.profile.profileImage) { %>
-        <img src="<%= todaysWinner.profile.profileImage %>" class="profile-thumb" alt="Winner" />
-      <% } %>
-      <h3><%= todaysWinner.profile.firstName %> <%= todaysWinner.profile.lastName %></h3>
-    </div>
-  <% } %>
-
-  <div class="text-center" style="margin-top: 1rem;">
+  <div class="text-center" style="margin-top: 1.5rem;">
     <a href="/bidding/history" class="btn btn-secondary">View My Bid History</a>
   </div>
 </div>

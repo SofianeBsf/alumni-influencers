@@ -3,7 +3,28 @@
 <div class="profile-edit-page">
   <h1>Edit Profile</h1>
 
-  <!-- ── PERSONAL INFO ── -->
+  <!-- ── COMPLETION SCORE ───────────────────────────────────────────────────── -->
+  <div class="card" style="margin-bottom:1.5rem;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:.5rem;">
+      <strong>Profile Completion</strong>
+      <span style="font-weight:700; color:<%= completionScore === 100 ? '#38a169' : '#d69e2e' %>">
+        <%= completionScore %>%
+      </span>
+    </div>
+    <div style="background:#e2e8f0; border-radius:9999px; height:12px; overflow:hidden;">
+      <div style="background:<%= completionScore === 100 ? '#38a169' : '#3182ce' %>;
+                  width:<%= completionScore %>%; height:100%; border-radius:9999px;
+                  transition:width 0.4s ease;"></div>
+    </div>
+    <% if (completionScore < 100) { %>
+      <p class="text-muted" style="margin-top:.5rem; font-size:.85rem;">
+        Complete all sections below to reach 100%: bio, LinkedIn URL, profile photo,
+        and at least one entry in each of degrees, certifications, licences, courses, and employment.
+      </p>
+    <% } %>
+  </div>
+
+  <!-- ── PERSONAL INFO ────────────────────────────────────────────────────────── -->
   <section class="card">
     <h2>Personal Information</h2>
     <form action="/profile/edit?_csrf=<%= csrfToken %>" method="POST" enctype="multipart/form-data" class="form">
@@ -36,7 +57,7 @@
     </form>
   </section>
 
-  <!-- ── DEGREES ── -->
+  <!-- ── DEGREES ──────────────────────────────────────────────────────────────── -->
   <section class="card">
     <h2>Degrees</h2>
     <% if (profile.degrees && profile.degrees.length > 0) { %>
@@ -49,7 +70,25 @@
               <td><%= d.institution %></td>
               <td><%= new Date(d.completionDate).toLocaleDateString('en-GB') %></td>
               <td>
+                <button class="btn btn-warning btn-sm edit-toggle-btn" data-target="edit-degree-<%= d._id %>">Edit</button>
                 <button class="btn btn-danger btn-sm delete-btn" data-url="/profile/degrees/<%= d._id %>">Delete</button>
+              </td>
+            </tr>
+            <tr id="edit-degree-<%= d._id %>" class="edit-row" style="display:none;">
+              <td colspan="4">
+                <form action="/profile/degrees/<%= d._id %>/edit" method="POST" class="form form-inline" style="margin:.5rem 0;">
+                  <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+                  <div class="form-row">
+                    <div class="form-group"><label>Degree Name *</label><input type="text" name="name" required value="<%= d.name %>" /></div>
+                    <div class="form-group"><label>Institution *</label><input type="text" name="institution" required value="<%= d.institution %>" /></div>
+                  </div>
+                  <div class="form-row">
+                    <div class="form-group"><label>Official URL *</label><input type="url" name="url" required value="<%= d.url %>" /></div>
+                    <div class="form-group"><label>Completion Date *</label><input type="date" name="completionDate" required value="<%= new Date(d.completionDate).toISOString().split('T')[0] %>" /></div>
+                  </div>
+                  <button type="submit" class="btn btn-primary btn-sm">Save Changes</button>
+                  <button type="button" class="btn btn-secondary btn-sm edit-cancel-btn" data-target="edit-degree-<%= d._id %>">Cancel</button>
+                </form>
               </td>
             </tr>
           <% }) %>
@@ -73,7 +112,7 @@
     </details>
   </section>
 
-  <!-- ── CERTIFICATIONS ── -->
+  <!-- ── CERTIFICATIONS ───────────────────────────────────────────────────────── -->
   <section class="card">
     <h2>Professional Certifications</h2>
     <% if (profile.certifications && profile.certifications.length > 0) { %>
@@ -85,7 +124,27 @@
               <td><a href="<%= c.url %>" target="_blank"><%= c.name %></a></td>
               <td><%= c.institution %></td>
               <td><%= new Date(c.completionDate).toLocaleDateString('en-GB') %></td>
-              <td><button class="btn btn-danger btn-sm delete-btn" data-url="/profile/certifications/<%= c._id %>">Delete</button></td>
+              <td>
+                <button class="btn btn-warning btn-sm edit-toggle-btn" data-target="edit-cert-<%= c._id %>">Edit</button>
+                <button class="btn btn-danger btn-sm delete-btn" data-url="/profile/certifications/<%= c._id %>">Delete</button>
+              </td>
+            </tr>
+            <tr id="edit-cert-<%= c._id %>" class="edit-row" style="display:none;">
+              <td colspan="4">
+                <form action="/profile/certifications/<%= c._id %>/edit" method="POST" class="form form-inline" style="margin:.5rem 0;">
+                  <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+                  <div class="form-row">
+                    <div class="form-group"><label>Certification Name *</label><input type="text" name="name" required value="<%= c.name %>" /></div>
+                    <div class="form-group"><label>Issuing Body *</label><input type="text" name="institution" required value="<%= c.institution %>" /></div>
+                  </div>
+                  <div class="form-row">
+                    <div class="form-group"><label>Course/Cert URL *</label><input type="url" name="url" required value="<%= c.url %>" /></div>
+                    <div class="form-group"><label>Completion Date *</label><input type="date" name="completionDate" required value="<%= new Date(c.completionDate).toISOString().split('T')[0] %>" /></div>
+                  </div>
+                  <button type="submit" class="btn btn-primary btn-sm">Save Changes</button>
+                  <button type="button" class="btn btn-secondary btn-sm edit-cancel-btn" data-target="edit-cert-<%= c._id %>">Cancel</button>
+                </form>
+              </td>
             </tr>
           <% }) %>
         </tbody>
@@ -108,7 +167,7 @@
     </details>
   </section>
 
-  <!-- ── LICENCES ── -->
+  <!-- ── LICENCES ─────────────────────────────────────────────────────────────── -->
   <section class="card">
     <h2>Professional Licences</h2>
     <% if (profile.licences && profile.licences.length > 0) { %>
@@ -120,7 +179,27 @@
               <td><a href="<%= l.url %>" target="_blank"><%= l.name %></a></td>
               <td><%= l.institution %></td>
               <td><%= new Date(l.completionDate).toLocaleDateString('en-GB') %></td>
-              <td><button class="btn btn-danger btn-sm delete-btn" data-url="/profile/licences/<%= l._id %>">Delete</button></td>
+              <td>
+                <button class="btn btn-warning btn-sm edit-toggle-btn" data-target="edit-licence-<%= l._id %>">Edit</button>
+                <button class="btn btn-danger btn-sm delete-btn" data-url="/profile/licences/<%= l._id %>">Delete</button>
+              </td>
+            </tr>
+            <tr id="edit-licence-<%= l._id %>" class="edit-row" style="display:none;">
+              <td colspan="4">
+                <form action="/profile/licences/<%= l._id %>/edit" method="POST" class="form form-inline" style="margin:.5rem 0;">
+                  <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+                  <div class="form-row">
+                    <div class="form-group"><label>Licence Name *</label><input type="text" name="name" required value="<%= l.name %>" /></div>
+                    <div class="form-group"><label>Awarding Body *</label><input type="text" name="institution" required value="<%= l.institution %>" /></div>
+                  </div>
+                  <div class="form-row">
+                    <div class="form-group"><label>Awarding Body URL *</label><input type="url" name="url" required value="<%= l.url %>" /></div>
+                    <div class="form-group"><label>Completion Date *</label><input type="date" name="completionDate" required value="<%= new Date(l.completionDate).toISOString().split('T')[0] %>" /></div>
+                  </div>
+                  <button type="submit" class="btn btn-primary btn-sm">Save Changes</button>
+                  <button type="button" class="btn btn-secondary btn-sm edit-cancel-btn" data-target="edit-licence-<%= l._id %>">Cancel</button>
+                </form>
+              </td>
             </tr>
           <% }) %>
         </tbody>
@@ -143,7 +222,7 @@
     </details>
   </section>
 
-  <!-- ── SHORT COURSES ── -->
+  <!-- ── SHORT COURSES ─────────────────────────────────────────────────────────── -->
   <section class="card">
     <h2>Short Professional Courses</h2>
     <% if (profile.courses && profile.courses.length > 0) { %>
@@ -155,7 +234,27 @@
               <td><a href="<%= c.url %>" target="_blank"><%= c.name %></a></td>
               <td><%= c.institution %></td>
               <td><%= new Date(c.completionDate).toLocaleDateString('en-GB') %></td>
-              <td><button class="btn btn-danger btn-sm delete-btn" data-url="/profile/courses/<%= c._id %>">Delete</button></td>
+              <td>
+                <button class="btn btn-warning btn-sm edit-toggle-btn" data-target="edit-course-<%= c._id %>">Edit</button>
+                <button class="btn btn-danger btn-sm delete-btn" data-url="/profile/courses/<%= c._id %>">Delete</button>
+              </td>
+            </tr>
+            <tr id="edit-course-<%= c._id %>" class="edit-row" style="display:none;">
+              <td colspan="4">
+                <form action="/profile/courses/<%= c._id %>/edit" method="POST" class="form form-inline" style="margin:.5rem 0;">
+                  <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+                  <div class="form-row">
+                    <div class="form-group"><label>Course Name *</label><input type="text" name="name" required value="<%= c.name %>" /></div>
+                    <div class="form-group"><label>Provider *</label><input type="text" name="institution" required value="<%= c.institution %>" /></div>
+                  </div>
+                  <div class="form-row">
+                    <div class="form-group"><label>Course URL *</label><input type="url" name="url" required value="<%= c.url %>" /></div>
+                    <div class="form-group"><label>Completion Date *</label><input type="date" name="completionDate" required value="<%= new Date(c.completionDate).toISOString().split('T')[0] %>" /></div>
+                  </div>
+                  <button type="submit" class="btn btn-primary btn-sm">Save Changes</button>
+                  <button type="button" class="btn btn-secondary btn-sm edit-cancel-btn" data-target="edit-course-<%= c._id %>">Cancel</button>
+                </form>
+              </td>
             </tr>
           <% }) %>
         </tbody>
@@ -178,7 +277,7 @@
     </details>
   </section>
 
-  <!-- ── EMPLOYMENT ── -->
+  <!-- ── EMPLOYMENT ───────────────────────────────────────────────────────────── -->
   <section class="card">
     <h2>Employment History</h2>
     <% if (profile.employment && profile.employment.length > 0) { %>
@@ -191,7 +290,34 @@
               <td><%= e.company %></td>
               <td><%= new Date(e.startDate).toLocaleDateString('en-GB') %></td>
               <td><%= e.isCurrent ? 'Present' : (e.endDate ? new Date(e.endDate).toLocaleDateString('en-GB') : '—') %></td>
-              <td><button class="btn btn-danger btn-sm delete-btn" data-url="/profile/employment/<%= e._id %>">Delete</button></td>
+              <td>
+                <button class="btn btn-warning btn-sm edit-toggle-btn" data-target="edit-emp-<%= e._id %>">Edit</button>
+                <button class="btn btn-danger btn-sm delete-btn" data-url="/profile/employment/<%= e._id %>">Delete</button>
+              </td>
+            </tr>
+            <tr id="edit-emp-<%= e._id %>" class="edit-row" style="display:none;">
+              <td colspan="5">
+                <form action="/profile/employment/<%= e._id %>/edit" method="POST" class="form form-inline" style="margin:.5rem 0;">
+                  <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+                  <div class="form-row">
+                    <div class="form-group"><label>Job Title *</label><input type="text" name="role" required value="<%= e.role %>" /></div>
+                    <div class="form-group"><label>Company *</label><input type="text" name="company" required value="<%= e.company %>" /></div>
+                  </div>
+                  <div class="form-row">
+                    <div class="form-group"><label>Start Date *</label><input type="date" name="startDate" required value="<%= new Date(e.startDate).toISOString().split('T')[0] %>" /></div>
+                    <div class="form-group">
+                      <label>End Date</label>
+                      <input type="date" name="endDate" value="<%= e.endDate ? new Date(e.endDate).toISOString().split('T')[0] : '' %>" <%= e.isCurrent ? 'disabled' : '' %> />
+                      <label style="margin-top:8px;">
+                        <input type="checkbox" name="isCurrent" <%= e.isCurrent ? 'checked' : '' %> />
+                        Currently working here
+                      </label>
+                    </div>
+                  </div>
+                  <button type="submit" class="btn btn-primary btn-sm">Save Changes</button>
+                  <button type="button" class="btn btn-secondary btn-sm edit-cancel-btn" data-target="edit-emp-<%= e._id %>">Cancel</button>
+                </form>
+              </td>
             </tr>
           <% }) %>
         </tbody>

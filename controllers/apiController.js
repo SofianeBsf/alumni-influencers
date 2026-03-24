@@ -48,7 +48,7 @@ const getTodaysFeaturedAlumnus = async (req, res) => {
     if (!winner) {
       return res.status(404).json({
         success: false,
-        message: 'No featured alumnus for today yet. Check back after 6 PM.',
+        message: 'No featured alumnus for today yet. The winner is selected automatically at midnight.',
       });
     }
 

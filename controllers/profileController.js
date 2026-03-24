@@ -9,28 +9,41 @@ const Profile = require('../models/Profile');
 const path = require('path');
 const fs = require('fs');
 
-// ─── VIEW / CREATE PROFILE ────────────────────────────────────────────────────
+// ─── PROFILE COMPLETION SCORE ─────────────────────────────────────────────────
 
 /**
- * GET /profile
- * Shows the current user's profile, or redirects to create if none exists.
+ * Calculate profile completion percentage (0–100).
+ * Each optional section counts equally.
  */
+const calcCompletionScore = (profile) => {
+  const checks = [
+    !!profile.bio,
+    !!profile.linkedinUrl,
+    !!profile.profileImage,
+    profile.degrees.length > 0,
+    profile.certifications.length > 0,
+    profile.licences.length > 0,
+    profile.courses.length > 0,
+    profile.employment.length > 0,
+  ];
+  const filled = checks.filter(Boolean).length;
+  return Math.round((filled / checks.length) * 100);
+};
+
+// ─── VIEW / CREATE PROFILE ────────────────────────────────────────────────────
+
 const getProfile = async (req, res) => {
   try {
     const profile = await Profile.findOne({ user: req.session.userId });
-    if (!profile) {
-      return res.redirect('/profile/create');
-    }
-    res.render('profile/view', { title: 'My Profile', profile });
+    if (!profile) return res.redirect('/profile/create');
+    const completionScore = calcCompletionScore(profile);
+    res.render('profile/view', { title: 'My Profile', profile, completionScore });
   } catch (err) {
     console.error('[Profile] getProfile error:', err);
     res.status(500).render('error', { title: 'Error', message: 'Could not load profile.' });
   }
 };
 
-/**
- * GET /profile/create
- */
 const getCreateProfile = async (req, res) => {
   const existing = await Profile.findOne({ user: req.session.userId });
   if (existing) return res.redirect('/profile/edit');
@@ -43,22 +56,12 @@ const getCreateProfile = async (req, res) => {
   delete req.session.formData;
 };
 
-/**
- * POST /profile/create
- */
 const postCreateProfile = async (req, res) => {
   try {
     const { firstName, lastName, bio, linkedinUrl } = req.body;
     const profileImage = req.file ? `/uploads/${req.file.filename}` : null;
 
-    await Profile.create({
-      user: req.session.userId,
-      firstName,
-      lastName,
-      bio,
-      linkedinUrl,
-      profileImage,
-    });
+    await Profile.create({ user: req.session.userId, firstName, lastName, bio, linkedinUrl, profileImage });
 
     req.session.success = 'Profile created! Now add your qualifications and experience.';
     res.redirect('/profile/edit');
@@ -69,18 +72,17 @@ const postCreateProfile = async (req, res) => {
   }
 };
 
-// ─── EDIT PROFILE ─────────────────────────────────────────────────────────────
+// ─── EDIT PERSONAL INFO ───────────────────────────────────────────────────────
 
-/**
- * GET /profile/edit
- */
 const getEditProfile = async (req, res) => {
   try {
     const profile = await Profile.findOne({ user: req.session.userId });
     if (!profile) return res.redirect('/profile/create');
+    const completionScore = calcCompletionScore(profile);
     res.render('profile/edit', {
       title: 'Edit Profile',
       profile,
+      completionScore,
       errors: req.session.validationErrors || [],
     });
     delete req.session.validationErrors;
@@ -90,10 +92,6 @@ const getEditProfile = async (req, res) => {
   }
 };
 
-/**
- * POST /profile/edit
- * Updates personal info section only.
- */
 const postEditProfile = async (req, res) => {
   try {
     const { firstName, lastName, bio, linkedinUrl } = req.body;
@@ -105,9 +103,7 @@ const postEditProfile = async (req, res) => {
     profile.bio = bio;
     profile.linkedinUrl = linkedinUrl;
 
-    // Handle new image upload
     if (req.file) {
-      // Delete old image file if it exists
       if (profile.profileImage) {
         const oldPath = path.join(__dirname, '../public', profile.profileImage);
         if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath);
@@ -127,10 +123,7 @@ const postEditProfile = async (req, res) => {
 
 // ─── GENERIC SUB-DOCUMENT HELPERS ─────────────────────────────────────────────
 
-/**
- * Add an item to a profile sub-array (degrees, certifications, etc.)
- * @param {string} arrayField - The profile field name (e.g. 'degrees')
- */
+/** Add an item to a credential sub-array. */
 const addSubItem = (arrayField) => async (req, res) => {
   try {
     const profile = await Profile.findOne({ user: req.session.userId });
@@ -149,15 +142,40 @@ const addSubItem = (arrayField) => async (req, res) => {
   }
 };
 
-/**
- * Delete an item from a profile sub-array by MongoDB sub-document ID.
- */
+/** Edit (update) a credential sub-document by ID. */
+const editSubItem = (arrayField) => async (req, res) => {
+  try {
+    const profile = await Profile.findOne({ user: req.session.userId });
+    if (!profile) return res.redirect('/profile/create');
+
+    const item = profile[arrayField].id(req.params.itemId);
+    if (!item) {
+      req.session.error = 'Entry not found.';
+      return res.redirect('/profile/edit');
+    }
+
+    const { name, institution, url, completionDate } = req.body;
+    item.name = name;
+    item.institution = institution;
+    item.url = url;
+    item.completionDate = completionDate;
+    await profile.save();
+
+    req.session.success = 'Entry updated successfully.';
+    res.redirect('/profile/edit');
+  } catch (err) {
+    console.error(`[Profile] edit ${arrayField} error:`, err);
+    req.session.error = 'Failed to update entry.';
+    res.redirect('/profile/edit');
+  }
+};
+
+/** Delete a credential sub-document by ID. */
 const deleteSubItem = (arrayField) => async (req, res) => {
   try {
     const profile = await Profile.findOne({ user: req.session.userId });
     if (!profile) return res.status(404).json({ success: false });
 
-    // Use pull() for reliable subdocument removal in Mongoose 8+
     profile[arrayField].pull({ _id: req.params.itemId });
     await profile.save();
 
@@ -192,20 +210,53 @@ const addEmployment = async (req, res) => {
   }
 };
 
+const editEmployment = async (req, res) => {
+  try {
+    const profile = await Profile.findOne({ user: req.session.userId });
+    if (!profile) return res.redirect('/profile/create');
+
+    const item = profile.employment.id(req.params.itemId);
+    if (!item) {
+      req.session.error = 'Employment entry not found.';
+      return res.redirect('/profile/edit');
+    }
+
+    const { company, role, startDate, endDate, isCurrent } = req.body;
+    item.company = company;
+    item.role = role;
+    item.startDate = startDate;
+    item.isCurrent = !!isCurrent;
+    item.endDate = isCurrent ? null : endDate;
+    await profile.save();
+
+    req.session.success = 'Employment entry updated.';
+    res.redirect('/profile/edit');
+  } catch (err) {
+    console.error('[Profile] editEmployment error:', err);
+    req.session.error = 'Failed to update employment.';
+    res.redirect('/profile/edit');
+  }
+};
+
 const deleteEmployment = deleteSubItem('employment');
 
 module.exports = {
   getProfile,
   getCreateProfile, postCreateProfile,
   getEditProfile, postEditProfile,
-  addDegree:        addSubItem('degrees'),
-  deleteDegree:     deleteSubItem('degrees'),
-  addCertification: addSubItem('certifications'),
+  addDegree:           addSubItem('degrees'),
+  editDegree:          editSubItem('degrees'),
+  deleteDegree:        deleteSubItem('degrees'),
+  addCertification:    addSubItem('certifications'),
+  editCertification:   editSubItem('certifications'),
   deleteCertification: deleteSubItem('certifications'),
-  addLicence:       addSubItem('licences'),
-  deleteLicence:    deleteSubItem('licences'),
-  addCourse:        addSubItem('courses'),
-  deleteCourse:     deleteSubItem('courses'),
+  addLicence:          addSubItem('licences'),
+  editLicence:         editSubItem('licences'),
+  deleteLicence:       deleteSubItem('licences'),
+  addCourse:           addSubItem('courses'),
+  editCourse:          editSubItem('courses'),
+  deleteCourse:        deleteSubItem('courses'),
   addEmployment,
+  editEmployment,
   deleteEmployment,
 };

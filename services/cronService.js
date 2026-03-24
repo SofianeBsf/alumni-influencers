@@ -3,13 +3,19 @@
  * Scheduled jobs using node-cron.
  *
  * Jobs:
- * 1. Daily Winner Selection — runs at 6:00 PM every day.
- *    Selects the highest bidder for that day, marks them as winner,
- *    creates a DailyWinner record for tomorrow's featured slot,
+ * 1. Daily Winner Selection — runs at midnight (00:00) every day.
+ *    Selects the highest bidder for YESTERDAY's bids, marks them as winner,
+ *    creates a DailyWinner record for TODAY's featured slot,
  *    and sends email notifications to all bidders.
  *
- * 2. Midnight cleanup — runs at 00:01 AM every day.
- *    Marks any leftover 'active' bids from the previous day as 'lost'.
+ * 2. Stale bid cleanup — runs at 00:01 AM every day.
+ *    Failsafe: marks any leftover 'active' bids from previous days as 'lost'.
+ *
+ * Timeline example:
+ *   Monday:   users place bids (bidDay = Monday midnight)
+ *   Midnight: cron runs, picks winner from Monday's bids,
+ *             creates DailyWinner for Tuesday
+ *   Tuesday:  winner is featured; new bidding round begins for Wednesday
  */
 
 const cron = require('node-cron');
@@ -20,7 +26,7 @@ const User = require('../models/User');
 const { sendWinNotification, sendLossNotification } = require('./emailService');
 
 /**
- * Get midnight UTC Date for a given date string or today.
+ * Get midnight UTC Date for a given date (defaults to now).
  */
 const getMidnightUTC = (date = new Date()) => {
   const d = new Date(date);
@@ -29,7 +35,7 @@ const getMidnightUTC = (date = new Date()) => {
 };
 
 /**
- * Format a date to a readable string for emails.
+ * Format a date for use in email bodies.
  */
 const formatDate = (date) => {
   return new Date(date).toLocaleDateString('en-GB', {
@@ -41,78 +47,85 @@ const formatDate = (date) => {
 };
 
 /**
- * Core winner selection logic (extracted for testability and manual triggering).
- * Selects the highest active bid for today, marks it as won, marks others as lost,
- * creates a DailyWinner record for the next day's feature, and sends notifications.
+ * Core winner selection logic — exported for testability and manual triggering.
+ *
+ * Runs at midnight of day X. At that point:
+ *   - yesterday = day X-1 (the bidding day that just ended)
+ *   - today     = day X   (the feature date — who appears today)
  */
-const selectDailyWinner = async () => {
-  const today = getMidnightUTC();
-  const tomorrow = getMidnightUTC(new Date(Date.now() + 24 * 60 * 60 * 1000));
+/**
+ * @param {boolean} testMode - If true, processes TODAY's bids instead of yesterday's.
+ *                             Used by the admin manual trigger for testing.
+ */
+const selectDailyWinner = async (testMode = false) => {
+  const now = new Date();
+  // Normal (midnight cron): process yesterday's bids, feature winner today
+  // Test mode (manual trigger): process today's bids, feature winner today
+  const bidDay = testMode
+    ? getMidnightUTC(now)                                              // today's bids
+    : getMidnightUTC(new Date(now.getTime() - 24 * 60 * 60 * 1000)); // yesterday's bids
+  const featureDate = getMidnightUTC(now); // winner always featured today
 
-  // YYYY-MM string for today
-  const todayStr = today.toISOString().substring(0, 10);
-
-  console.log(`[CRON] Running winner selection for ${todayStr}`);
+  const bidDayStr = bidDay.toISOString().substring(0, 10);
+  console.log(`[CRON] Running winner selection for bids from ${bidDayStr} (testMode=${testMode})`);
 
   try {
-    // Check if winner already selected for tomorrow to avoid double-running
-    const existingWinner = await DailyWinner.findOne({ featureDate: tomorrow });
+    // Avoid double-running
+    const existingWinner = await DailyWinner.findOne({ featureDate });
     if (existingWinner) {
-      console.log('[CRON] Winner already selected for tomorrow, skipping.');
-      return;
+      console.log('[CRON] Winner already selected for this feature date, skipping.');
+      return { skipped: true };
     }
 
-    // Fetch all active bids for today, sorted highest first
-    const bids = await Bid.find({ bidDay: today, status: 'active' })
+    // Fetch all active bids for the bid day, highest first
+    const bids = await Bid.find({ bidDay, status: 'active' })
       .sort({ amount: -1 })
       .populate('user');
 
     if (bids.length === 0) {
-      console.log('[CRON] No active bids for today. No winner selected.');
-      return;
+      console.log('[CRON] No active bids found. No winner selected.');
+      return { noBids: true };
     }
 
     const winningBid = bids[0];
     const losingBids = bids.slice(1);
 
-    // --- Mark winner ---
+    // Mark winner
     winningBid.status = 'won';
     await winningBid.save();
 
-    // --- Create DailyWinner record for tomorrow ---
+    // Create DailyWinner record
     const profile = await Profile.findOne({ user: winningBid.user._id });
     if (profile) {
       await DailyWinner.create({
-        featureDate: tomorrow,
+        featureDate,
         user: winningBid.user._id,
         profile: profile._id,
         bid: winningBid._id,
         winningAmount: winningBid.amount,
       });
-      console.log(`[CRON] Winner: ${winningBid.user.email} with bid £${winningBid.amount}`);
+      console.log(`[CRON] Winner: ${winningBid.user.email} — featured on ${featureDate.toISOString().substring(0, 10)}`);
     }
 
-    // --- Mark all losing bids as lost ---
+    // Mark losing bids
     const losingBidIds = losingBids.map((b) => b._id);
     await Bid.updateMany({ _id: { $in: losingBidIds } }, { status: 'lost' });
 
-    // --- Send email notifications ---
-    const tomorrowDateStr = formatDate(tomorrow);
+    // Send email notifications
+    const featureDateStr = formatDate(featureDate);
 
-    // Notify winner
     if (profile) {
-      await sendWinNotification(winningBid.user.email, profile.firstName, tomorrowDateStr).catch(
+      await sendWinNotification(winningBid.user.email, profile.firstName, featureDateStr).catch(
         (err) => console.error('[CRON] Failed to send win email:', err.message)
       );
       winningBid.notificationSent = true;
       await winningBid.save();
     }
 
-    // Notify losers
     for (const bid of losingBids) {
       const loserProfile = await Profile.findOne({ user: bid.user._id });
       if (loserProfile) {
-        await sendLossNotification(bid.user.email, loserProfile.firstName, tomorrowDateStr).catch(
+        await sendLossNotification(bid.user.email, loserProfile.firstName, featureDateStr).catch(
           (err) => console.error('[CRON] Failed to send loss email:', err.message)
         );
         bid.notificationSent = true;
@@ -121,26 +134,25 @@ const selectDailyWinner = async () => {
     }
 
     console.log(`[CRON] Winner selection complete. ${losingBids.length} losers notified.`);
+    return { winner: winningBid.user.email };
   } catch (err) {
     console.error('[CRON] Error during winner selection:', err);
+    throw err;
   }
 };
 
 /**
- * Initialise all cron jobs.
- * Called once from app.js after DB connection.
+ * Initialise all cron jobs. Called once from app.js after DB connection.
  */
 const initCronJobs = () => {
-  // --- Job 1: Daily winner selection at 6:00 PM (18:00) ---
-  cron.schedule('0 18 * * *', async () => {
-    console.log('[CRON] 6 PM job triggered: selecting daily winner');
+  // Job 1: Winner selection at midnight (00:00) every day
+  cron.schedule('0 0 * * *', async () => {
+    console.log('[CRON] Midnight job triggered: selecting daily winner');
     await selectDailyWinner();
   });
 
-  // --- Job 2: Cleanup stale active bids at 00:01 AM ---
-  // Marks any still-active bids from previous days as lost (failsafe)
+  // Job 2: Failsafe cleanup at 00:01 — marks stale active bids as lost
   cron.schedule('1 0 * * *', async () => {
-    const yesterday = getMidnightUTC(new Date(Date.now() - 24 * 60 * 60 * 1000));
     await Bid.updateMany(
       { bidDay: { $lt: getMidnightUTC() }, status: 'active' },
       { status: 'lost' }
@@ -148,7 +160,7 @@ const initCronJobs = () => {
     console.log('[CRON] Cleanup: stale active bids marked as lost.');
   });
 
-  console.log('[CRON] Scheduled jobs initialised (winner selection: 6 PM daily)');
+  console.log('[CRON] Scheduled jobs initialised (winner selection: midnight daily)');
 };
 
 module.exports = { initCronJobs, selectDailyWinner };

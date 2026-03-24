@@ -26,6 +26,28 @@
     <a href="/api-docs" class="btn btn-secondary" target="_blank">Swagger Docs</a>
   </div>
 
+  <!-- Manual winner trigger — for testing only -->
+  <div class="card" style="border:2px dashed #d69e2e; background:#fffff0;">
+    <h2>🧪 Testing: Trigger Winner Selection Now</h2>
+    <p>
+      Normally the winner is selected automatically at <strong>midnight</strong>.
+      Use this button to trigger it immediately so you can test the API response.
+    </p>
+    <form action="/api/v1/admin/trigger-winner" method="POST">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+      <button
+        type="submit"
+        class="btn btn-warning confirm-btn"
+        data-confirm="This will immediately select today's winner from active bids. Only do this for testing.">
+        ▶ Run Winner Selection Now
+      </button>
+    </form>
+    <p class="text-muted" style="margin-top:.5rem; font-size:.85rem;">
+      After clicking, go to Postman and call
+      <code>GET /api/v1/featured-alumnus</code> — you should get a 200 response.
+    </p>
+  </div>
+
   <div class="card">
     <h2>Recent API Requests</h2>
     <table class="table">

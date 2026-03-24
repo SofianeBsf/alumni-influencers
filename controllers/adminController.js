@@ -45,7 +45,10 @@ const getDashboard = async (req, res) => {
 const getClients = async (req, res) => {
   try {
     const clients = await ApiClient.find().sort({ createdAt: -1 });
-    res.render('admin/clients', { title: 'API Clients', clients });
+    // Pull newly-generated plain token from session (set once after creation)
+    const newToken = req.session.newToken || null;
+    delete req.session.newToken;
+    res.render('admin/clients', { title: 'API Clients', clients, newToken });
   } catch (err) {
     console.error('[Admin] getClients error:', err);
     res.status(500).render('error', { title: 'Error', message: 'Could not load clients.' });

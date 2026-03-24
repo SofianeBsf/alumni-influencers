@@ -13,6 +13,7 @@ router.use(requireLogin);
 router.get('/',         biddingController.getBiddingPage);
 router.post('/place',   validateBid, biddingController.placeBid);
 router.post('/update',  validateBid, biddingController.updateBid);
+router.post('/cancel',  biddingController.cancelBid);
 router.get('/history',  biddingController.getBidHistory);
 
 module.exports = router;

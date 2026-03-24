@@ -3,10 +3,25 @@
 <div class="admin-page">
   <h1>API Clients</h1>
 
-  <% if (typeof newToken !== 'undefined' && newToken) { %>
-    <div class="alert alert-success token-reveal">
-      <strong>⚠️ Copy this token now — it will never be shown again!</strong>
-      <div class="token-box"><code><%= newToken %></code></div>
+  <% if (newToken) { %>
+    <div class="card" style="border: 2px solid #e53e3e; background: #fff5f5;">
+      <h2 style="color:#e53e3e;">⚠️ Save Your API Token Now</h2>
+      <p>This token is shown <strong>only once</strong>. It cannot be recovered after you leave this page.</p>
+      <div style="display:flex; align-items:center; gap:1rem; margin: 1rem 0; flex-wrap:wrap;">
+        <code id="newTokenValue" style="
+          display:block; background:#1a202c; color:#68d391;
+          padding:1rem 1.5rem; border-radius:6px; font-size:1rem;
+          letter-spacing:0.05em; word-break:break-all; flex:1; min-width:200px;">
+          <%= newToken %>
+        </code>
+        <button class="btn btn-primary copy-btn" data-copy="newTokenValue" style="white-space:nowrap;">
+          📋 Copy Token
+        </button>
+      </div>
+      <p class="text-muted" style="font-size:0.85rem;">
+        Use this in Postman or your app:
+        <code>Authorization: Bearer &lt;token&gt;</code>
+      </p>
     </div>
   <% } %>
 
@@ -15,8 +30,14 @@
     <form action="/admin/clients/create" method="POST" class="form form-inline">
       <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
       <div class="form-row">
-        <div class="form-group"><label>Client Name *</label><input type="text" name="name" required placeholder="e.g. AR App v1" /></div>
-        <div class="form-group"><label>Description</label><input type="text" name="description" placeholder="Optional description" /></div>
+        <div class="form-group">
+          <label>Client Name *</label>
+          <input type="text" name="name" required placeholder="e.g. AR App v1" />
+        </div>
+        <div class="form-group">
+          <label>Description</label>
+          <input type="text" name="description" placeholder="Optional description" />
+        </div>
         <div class="form-group">
           <label>Scope</label>
           <select name="scope">
@@ -31,33 +52,54 @@
 
   <div class="card">
     <h2>All Clients</h2>
-    <table class="table">
-      <thead><tr><th>Name</th><th>Prefix</th><th>Scope</th><th>Status</th><th>Last Used</th><th>Actions</th></tr></thead>
-      <tbody>
-        <% clients.forEach(c => { %>
+    <% if (clients.length === 0) { %>
+      <p class="text-muted">No API clients created yet.</p>
+    <% } else { %>
+      <table class="table">
+        <thead>
           <tr>
-            <td><strong><%= c.name %></strong><br /><small><%= c.description || '' %></small></td>
-            <td><code><%= c.tokenPrefix %>...</code></td>
-            <td><%= c.scope %></td>
-            <td><span class="badge <%= c.isActive ? 'badge-success' : 'badge-error' %>"><%= c.isActive ? 'Active' : 'Revoked' %></span></td>
-            <td><%= c.lastUsedAt ? new Date(c.lastUsedAt).toLocaleString('en-GB') : 'Never' %></td>
-            <td>
-              <% if (c.isActive) { %>
-                <form action="/admin/clients/<%= c._id %>/revoke" method="POST" style="display:inline;">
-                  <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
-                  <button class="btn btn-danger btn-sm" onclick="return confirm('Revoke this token?')">Revoke</button>
-                </form>
-              <% } else { %>
-                <form action="/admin/clients/<%= c._id %>/activate" method="POST" style="display:inline;">
-                  <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
-                  <button class="btn btn-secondary btn-sm">Re-activate</button>
-                </form>
-              <% } %>
-            </td>
+            <th>Name</th><th>Token Prefix</th><th>Scope</th>
+            <th>Status</th><th>Last Used</th><th>Actions</th>
           </tr>
-        <% }) %>
-      </tbody>
-    </table>
+        </thead>
+        <tbody>
+          <% clients.forEach(c => { %>
+            <tr>
+              <td>
+                <strong><%= c.name %></strong>
+                <% if (c.description) { %><br /><small class="text-muted"><%= c.description %></small><% } %>
+              </td>
+              <td><code><%= c.tokenPrefix %>...</code></td>
+              <td><span class="badge badge-secondary"><%= c.scope %></span></td>
+              <td>
+                <span class="badge <%= c.isActive ? 'badge-success' : 'badge-error' %>">
+                  <%= c.isActive ? 'Active' : 'Revoked' %>
+                </span>
+              </td>
+              <td><%= c.lastUsedAt ? new Date(c.lastUsedAt).toLocaleString('en-GB') : 'Never' %></td>
+              <td>
+                <% if (c.isActive) { %>
+                  <form action="/admin/clients/<%= c._id %>/revoke" method="POST" style="display:inline;">
+                    <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+                    <button
+                      type="submit"
+                      class="btn btn-danger btn-sm confirm-btn"
+                      data-confirm="Revoke this token? The client will immediately lose API access.">
+                      Revoke
+                    </button>
+                  </form>
+                <% } else { %>
+                  <form action="/admin/clients/<%= c._id %>/activate" method="POST" style="display:inline;">
+                    <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+                    <button type="submit" class="btn btn-secondary btn-sm">Re-activate</button>
+                  </form>
+                <% } %>
+              </td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    <% } %>
   </div>
 </div>
 
