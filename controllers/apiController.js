@@ -4,34 +4,18 @@
  * All responses are JSON. Bearer token authentication required.
  *
  * Endpoints:
- *   GET  /api/v1/today          - Get today's featured alumnus
- *   GET  /api/v1/alumni/:id     - Get a specific alumni profile
+ *   GET  /api/v1/featured-alumnus  - Get today's featured alumnus
+ *   GET  /api/v1/alumni/:id        - Get a specific alumni profile
  */
 
 const DailyWinner = require('../models/DailyWinner');
 const Profile = require('../models/Profile');
 
 /**
- * GET /api/v1/today
+ * GET /api/v1/featured-alumnus
  * Returns today's featured alumnus profile.
  * The winning bid amount is NEVER included in the response.
- *
- * @swagger
- * /api/v1/today:
- *   get:
- *     summary: Get today's featured alumnus
- *     tags: [Public API]
- *     security:
- *       - bearerAuth: []
- *     responses:
- *       200:
- *         description: Today's featured alumnus profile
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/FeaturedAlumnus'
- *       404:
- *         description: No featured alumnus for today
+ * Swagger documentation is in routes/api.js to avoid duplicate entries.
  */
 const getTodaysFeaturedAlumnus = async (req, res) => {
   try {

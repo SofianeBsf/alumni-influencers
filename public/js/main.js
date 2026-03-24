@@ -115,14 +115,22 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  // ── "Currently working here" checkbox disables end-date input ────────────
-  const isCurrentCheckbox = document.getElementById('isCurrentCheckbox');
-  const endDateInput = document.getElementById('endDate');
-  if (isCurrentCheckbox && endDateInput) {
-    isCurrentCheckbox.addEventListener('change', () => {
-      endDateInput.disabled = isCurrentCheckbox.checked;
-      if (isCurrentCheckbox.checked) endDateInput.value = '';
-    });
-  }
+  // ── "Currently working here" checkbox disables end-date input ─────────────
+  // Uses event delegation so it works for BOTH the static "Add Employment" form
+  // AND every dynamically-shown inline edit row for existing employment entries.
+  document.addEventListener('change', (e) => {
+    const checkbox = e.target.closest('input[name="isCurrent"]');
+    if (!checkbox) return;
+
+    // Find the enclosing <form> and locate the endDate input within it
+    const form = checkbox.closest('form');
+    if (!form) return;
+
+    const endDateInput = form.querySelector('input[name="endDate"]');
+    if (!endDateInput) return;
+
+    endDateInput.disabled = checkbox.checked;
+    if (checkbox.checked) endDateInput.value = '';
+  });
 
 });
