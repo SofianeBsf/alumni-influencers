@@ -143,24 +143,33 @@ const selectDailyWinner = async (testMode = false) => {
 
 /**
  * Initialise all cron jobs. Called once from app.js after DB connection.
+ *
+ * IMPORTANT: Both jobs use { timezone: 'UTC' } so they fire at midnight UTC
+ * regardless of the server's local system timezone. All bid dates are stored
+ * as UTC midnight via getMidnightUTC(), so the cron MUST also run at UTC
+ * midnight for the bidDay date comparison to match correctly.
+ *
+ * Without this, on a server in BST (UTC+1) the cron would fire at 23:00 UTC
+ * (local midnight), and getMidnightUTC(now - 24h) would produce the wrong day,
+ * causing the query to find zero bids.
  */
 const initCronJobs = () => {
-  // Job 1: Winner selection at midnight (00:00) every day
+  // Job 1: Winner selection at midnight UTC every day
   cron.schedule('0 0 * * *', async () => {
-    console.log('[CRON] Midnight job triggered: selecting daily winner');
+    console.log('[CRON] Midnight UTC job triggered: selecting daily winner');
     await selectDailyWinner();
-  });
+  }, { timezone: 'UTC' });
 
-  // Job 2: Failsafe cleanup at 00:01 — marks stale active bids as lost
+  // Job 2: Failsafe cleanup at 00:01 UTC — marks stale active bids as lost
   cron.schedule('1 0 * * *', async () => {
     await Bid.updateMany(
       { bidDay: { $lt: getMidnightUTC() }, status: 'active' },
       { status: 'lost' }
     );
     console.log('[CRON] Cleanup: stale active bids marked as lost.');
-  });
+  }, { timezone: 'UTC' });
 
-  console.log('[CRON] Scheduled jobs initialised (winner selection: midnight daily)');
+  console.log('[CRON] Scheduled jobs initialised (winner selection: 00:00 UTC daily)');
 };
 
 module.exports = { initCronJobs, selectDailyWinner };
