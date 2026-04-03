@@ -21,12 +21,14 @@ const ApiClientSchema = new mongoose.Schema(
     // Full token hash (bcrypt) - never stored in plain text
     tokenHash: { type: String, required: true, select: false },
 
-    // Scope defines what endpoints this client can access
-    // 'public' = only public API, 'full' = all endpoints
+    // Granular permissions this client has been granted.
+    // read:alumni_of_day  — GET /api/v1/featured-alumnus + /api/v1/alumni/:id
+    // read:alumni         — GET /api/v1/alumni (list all alumni)
+    // read:analytics      — GET /api/v1/analytics/* (aggregation endpoints)
     scope: {
-      type: String,
-      enum: ['public', 'full'],
-      default: 'public',
+      type: [String],
+      enum: ['read:alumni_of_day', 'read:alumni', 'read:analytics'],
+      default: ['read:alumni_of_day'],
     },
 
     // Whether this token is active (revocation sets this to false)

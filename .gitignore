@@ -2,7 +2,7 @@
 # Alumni Influencers - .gitignore
 # =============================================
 
-# --- Environment Variables (NEVER commit these) ---
+# --- Environment Variables ---
 .env
 .env.local
 .env.production

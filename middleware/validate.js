@@ -128,7 +128,8 @@ const validateBid = [
 const validateApiClient = [
   body('name').trim().notEmpty().withMessage('Client name is required').escape(),
   body('description').optional().trim().escape(),
-  body('scope').isIn(['public', 'full']).withMessage('Invalid scope'),
+  // Scope validation is handled in the controller — express-validator v7
+  // processes array fields (checkboxes) per-element which breaks custom array logic here
   handleValidationErrors,
 ];
 

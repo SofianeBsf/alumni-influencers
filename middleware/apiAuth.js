@@ -89,4 +89,27 @@ const requireApiToken = async (req, res, next) => {
   }
 };
 
-module.exports = { requireApiToken, logRequest };
+/**
+ * requireScope(permission) — Scope-enforcement middleware factory.
+ * Must be used AFTER requireApiToken (which populates req.apiClient).
+ *
+ * Usage:
+ *   router.get('/alumni', requireApiToken, requireScope('read:alumni'), handler);
+ *
+ * Returns 403 if the authenticated client's scope array does not include
+ * the required permission string.
+ */
+const requireScope = (permission) => (req, res, next) => {
+  const client = req.apiClient;
+
+  if (!client || !Array.isArray(client.scope) || !client.scope.includes(permission)) {
+    return res.status(403).json({
+      success: false,
+      error: `Forbidden. This token does not have the '${permission}' permission.`,
+    });
+  }
+
+  next();
+};
+
+module.exports = { requireApiToken, requireScope, logRequest };

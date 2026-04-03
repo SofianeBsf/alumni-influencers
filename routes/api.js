@@ -7,7 +7,8 @@
 const express = require('express');
 const router = express.Router();
 const apiController = require('../controllers/apiController');
-const { requireApiToken } = require('../middleware/apiAuth');
+const analyticsController = require('../controllers/analyticsController');
+const { requireApiToken, requireScope } = require('../middleware/apiAuth');
 const { requireAdmin } = require('../middleware/auth');
 const { selectDailyWinner } = require('../services/cronService');
 const rateLimit = require('express-rate-limit');
@@ -52,7 +53,7 @@ router.use(apiLimiter);
  *       429:
  *         description: Too many requests
  */
-router.get('/featured-alumnus', requireApiToken, apiController.getTodaysFeaturedAlumnus);
+router.get('/featured-alumnus', requireApiToken, requireScope('read:alumni_of_day'), apiController.getTodaysFeaturedAlumnus);
 
 /**
  * @swagger
@@ -79,7 +80,136 @@ router.get('/featured-alumnus', requireApiToken, apiController.getTodaysFeatured
  *       404:
  *         description: Profile not found
  */
-router.get('/alumni/:id', requireApiToken, apiController.getAlumnusById);
+router.get('/alumni/:id', requireApiToken, requireScope('read:alumni'), apiController.getAlumnusById);
+
+// ─── ALUMNI LIST ──────────────────────────────────────────────────────────────
+
+/**
+ * @swagger
+ * /api/v1/alumni:
+ *   get:
+ *     summary: List all alumni
+ *     description: Returns lightweight profiles for all alumni. Supports ?programme= and ?sector= filters.
+ *     tags: [Analytics API]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: programme
+ *         schema:
+ *           type: string
+ *         description: Filter by degree programme name (partial match)
+ *       - in: query
+ *         name: sector
+ *         schema:
+ *           type: string
+ *         description: Filter by employer/company name (partial match)
+ *     responses:
+ *       200:
+ *         description: List of alumni
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden — token lacks read:alumni permission
+ */
+router.get('/alumni', requireApiToken, requireScope('read:alumni'), analyticsController.getAllAlumni);
+
+// ─── ANALYTICS ENDPOINTS ──────────────────────────────────────────────────────
+
+/**
+ * @swagger
+ * /api/v1/analytics/summary:
+ *   get:
+ *     summary: Dashboard summary cards
+ *     description: Returns top-level counts — total alumni, employment rate, certification count, etc.
+ *     tags: [Analytics API]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Summary stats object
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden — token lacks read:analytics permission
+ */
+router.get('/analytics/summary', requireApiToken, requireScope('read:analytics'), analyticsController.getSummary);
+
+/**
+ * @swagger
+ * /api/v1/analytics/certifications:
+ *   get:
+ *     summary: Certification trends
+ *     description: Certifications completed per year + top providers. Use for line/bar charts.
+ *     tags: [Analytics API]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Certification trend data
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden
+ */
+router.get('/analytics/certifications', requireApiToken, requireScope('read:analytics'), analyticsController.getCertificationTrends);
+
+/**
+ * @swagger
+ * /api/v1/analytics/employment:
+ *   get:
+ *     summary: Employment sector breakdown
+ *     description: Top employers, top job roles, and currently-employed vs not. Use for bar/doughnut charts.
+ *     tags: [Analytics API]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Employment breakdown data
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden
+ */
+router.get('/analytics/employment', requireApiToken, requireScope('read:analytics'), analyticsController.getEmploymentBreakdown);
+
+/**
+ * @swagger
+ * /api/v1/analytics/skills:
+ *   get:
+ *     summary: Skills gap overview
+ *     description: Top degrees, certifications, courses, and licences across all alumni.
+ *     tags: [Analytics API]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Skills distribution data
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden
+ */
+router.get('/analytics/skills', requireApiToken, requireScope('read:analytics'), analyticsController.getSkillsOverview);
+
+/**
+ * @swagger
+ * /api/v1/analytics/career-pathways:
+ *   get:
+ *     summary: Career pathways
+ *     description: Maps degree programmes to the job roles alumni went on to hold.
+ *     tags: [Analytics API]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Career pathway data
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden
+ */
+router.get('/analytics/career-pathways', requireApiToken, requireScope('read:analytics'), analyticsController.getCareerPathways);
 
 /**
  * POST /api/v1/admin/trigger-winner

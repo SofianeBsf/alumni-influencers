@@ -62,7 +62,19 @@ const getClients = async (req, res) => {
  */
 const createClient = async (req, res) => {
   try {
-    const { name, description, scope } = req.body;
+    const { name, description } = req.body;
+
+    // scope can arrive as a string (single checkbox) or array (multiple checkboxes)
+    // Normalise to always be an array, filter to known valid values
+    const VALID_SCOPES = ['read:alumni_of_day', 'read:alumni', 'read:analytics'];
+    const rawScope = req.body.scope;
+    const scope = (Array.isArray(rawScope) ? rawScope : rawScope ? [rawScope] : [])
+      .filter((s) => VALID_SCOPES.includes(s));
+
+    if (scope.length === 0) {
+      req.session.error = 'At least one permission scope must be selected.';
+      return res.redirect('/admin/clients');
+    }
 
     // Generate the token
     const { fullToken, prefix } = generateApiToken();
