@@ -55,12 +55,17 @@ const requireApiToken = async (req, res, next) => {
   }
 
   try {
-    // Find all active clients and check token hash
-    // We only need to check active clients — inactive = revoked
-    const clients = await ApiClient.find({ isActive: true }).select('+tokenHash');
+    // Use the token prefix (first 11 chars: "ai_" + 8 hex) to narrow the
+    // lookup to at most one candidate before doing the slow bcrypt comparison.
+    // This reduces from O(n * bcrypt) to O(1 * bcrypt) per request — critical
+    // when multiple concurrent requests hit the middleware simultaneously.
+    const prefix = token.substring(0, 11);
+    const candidates = await ApiClient
+      .find({ isActive: true, tokenPrefix: prefix })
+      .select('+tokenHash');
 
     let matchedClient = null;
-    for (const client of clients) {
+    for (const client of candidates) {
       const isMatch = await bcrypt.compare(token, client.tokenHash);
       if (isMatch) {
         matchedClient = client;
